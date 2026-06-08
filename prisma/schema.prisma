@@ -5,3 +5,23 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model Team {
+  id               String   @id @default(uuid())
+  name             String
+  country          String
+  league           String
+  stadium          String
+  founded          Int
+  coach            String
+  shortDescription String
+  description      String
+  logo             String?
+  image            String?
+  category         String
+  titles           Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([name])
+}
