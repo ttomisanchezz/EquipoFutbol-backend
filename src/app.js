@@ -1,4 +1,6 @@
-﻿//Crear app express y configurar middlewares
+﻿//CONFIGURACION DE EXPRESS Y LAS RUTAS DE LA API
+
+//Crear app express y configurar middlewares
 const express = require("express");
 const cors = require("cors");
 //activar CORS para permitir solicitudes desde el frontend

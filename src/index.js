@@ -1,4 +1,6 @@
-﻿//carga variables de entorno desde el archivo .env
+﻿//LEVANTA SERVIDOR
+
+//carga variables de entorno desde el archivo .env
 require("dotenv").config();
 //importa la app de Express desde app.js  
 const app = require("./app");
