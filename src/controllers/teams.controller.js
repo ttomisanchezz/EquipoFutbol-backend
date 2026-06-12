@@ -18,5 +18,17 @@ const getTeams = async (req, res) => {
     res.status(500).json({ error: "Error inesperado del servidor" });
   }
 };
+const getTeamById = async (req, res) => {
+  const id = req.params.id;
+  const team = await teamsService.getTeamById(id);
 
-module.exports = { getTeams };
+  if (!team) {
+    return res.status(404).json({
+      error: "Recurso no encontrado"
+    });
+  }
+
+  return res.status(200).json(team);
+};
+
+module.exports = { getTeams, getTeamById };

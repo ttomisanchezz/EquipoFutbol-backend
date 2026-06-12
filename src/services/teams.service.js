@@ -15,5 +15,16 @@ const getTeams = async ({ page, limit, search }) => {
     orderBy: { name: "asc" },
   });
 };
+const getTeamById = async (id) => {
+  return prisma.team.findUnique({
+    where: {
+      id
+      /**si el model Team cambia a int @id @default(autoincrement())
+       * o valor numerico manual en el seed, cambiar a:
+       * id: Number(id),
+       */
+    }
+  });
+};
 
-module.exports = { getTeams };
+module.exports = { getTeams , getTeamById};
