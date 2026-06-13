@@ -1,5 +1,6 @@
 //controladores de equipos: leen la request, llaman al service y arman la respuesta
 const teamsService = require("../services/teams.service");
+const teamValidation = require("../validations/team.validation");
 
 //GET /api/equipos?page=1&limit=8&search=boca
 const getTeams = async (req, res) => {
@@ -18,6 +19,7 @@ const getTeams = async (req, res) => {
     res.status(500).json({ error: "Error inesperado del servidor" });
   }
 };
+// GET /api/equipos/:id 
 const getTeamById = async (req, res) => {
   const id = req.params.id;
   const team = await teamsService.getTeamById(id);
@@ -30,5 +32,21 @@ const getTeamById = async (req, res) => {
 
   return res.status(200).json(team);
 };
+const createTeam = async (req, res) => {
+  const validName = await teamsService.getTeamByName(req.body.name);
+  if(validName){
+    return res.status(409).json({
+      error: 'Equipo ya ingresado',
+    });
+  }
+  const validation = await teamValidation.validateTeam(req.body);
+  if (!validation.isValid) {
+    return res.status(400).json({
+      error: 'Datos equipo invalidos',
+      details: validation.errors,
+    });
+  }
+  return res.status(201).json(req.body);
+}
 
-module.exports = { getTeams, getTeamById };
+module.exports = { getTeams, getTeamById, createTeam };

@@ -26,5 +26,19 @@ const getTeamById = async (id) => {
     }
   });
 };
-
-module.exports = { getTeams , getTeamById};
+const createTeam = async (teamData) =>{
+  return prisma.team.create({
+    data: teamData,
+  });
+}
+const getTeamByName = async (name) => {
+  return prisma.team.findFirst({
+    where: {
+      name: {
+        equals: name,
+        mode: "insensitive",
+      },
+    },
+  });
+};
+module.exports = { getTeams , getTeamById, createTeam, getTeamByName};
