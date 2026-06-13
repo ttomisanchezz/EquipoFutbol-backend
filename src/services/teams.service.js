@@ -41,4 +41,16 @@ const getTeamByName = async (name) => {
     },
   });
 };
-module.exports = { getTeams , getTeamById, createTeam, getTeamByName};
+const updateTeam = async (id, teamData) => {
+  const existingTeam = await prisma.team.findUnique({
+    where: { id }
+  });
+  if (!existingTeam) {
+    return null;
+  }
+  return await prisma.team.update({
+    where: { id },
+    data: teamData
+  });
+};
+module.exports = { getTeams , getTeamById, createTeam, getTeamByName , updateTeam};

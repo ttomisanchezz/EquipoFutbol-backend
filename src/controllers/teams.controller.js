@@ -48,5 +48,22 @@ const createTeam = async (req, res) => {
   }
   return res.status(201).json(req.body);
 }
+const updateTeam = async (req, res) => {
+  const id = req.params.id;
+  const validation = teamValidation.validateTeam(req.body);
+  if (!validation.isValid) {
+    return res.status(400).json({
+      error: "Datos inválidos",
+      details: validation.errors
+    });
+  }
+  const updatedTeam = await teamsService.updateTeam( id ,req.body);
+  if (!updatedTeam) {
+    return res.status(404).json({
+      error: "Equipo no encontrado"
+    });
+  }
+  return res.status(200).json(updatedTeam);
+};
 
-module.exports = { getTeams, getTeamById, createTeam };
+module.exports = { getTeams, getTeamById, createTeam , updateTeam};
