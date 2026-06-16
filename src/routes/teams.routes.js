@@ -6,5 +6,6 @@ const router = Router();
 
 //GET /api/equipos -> listado con paginacion y busqueda
 router.get("/", teamsController.getTeams);
+router.get('/:id', teamsController.getTeamById);
 
 module.exports = router;
