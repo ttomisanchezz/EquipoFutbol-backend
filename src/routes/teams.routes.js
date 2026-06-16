@@ -8,5 +8,6 @@ const router = Router();
 router.get("/", teamsController.getTeams);
 router.get('/:id', teamsController.getTeamById);
 router.post('/', teamsController.createTeam);
+router.put("/:id", teamsController.updateTeam);
 
 module.exports = router;
