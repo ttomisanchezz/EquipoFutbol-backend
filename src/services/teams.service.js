@@ -43,14 +43,20 @@ const getTeamByName = async (name) => {
 };
 const updateTeam = async (id, teamData) => {
   const existingTeam = await prisma.team.findUnique({
-    where: { id }
+    where: {id}
   });
   if (!existingTeam) {
     return null;
   }
   return await prisma.team.update({
-    where: { id },
+    where: {id},
     data: teamData
   });
 };
-module.exports = { getTeams , getTeamById, createTeam, getTeamByName , updateTeam};
+const deleteTeam = async (id) =>{
+  const deletedTeam = await prisma.team.delete({
+    where: {id}
+  });
+  return deletedTeam;
+}
+module.exports = { getTeams , getTeamById, createTeam, getTeamByName , updateTeam, deleteTeam};
