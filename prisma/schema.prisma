@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Team {
@@ -22,6 +23,4 @@ model Team {
   titles           Int
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-
-  @@index([name])
 }

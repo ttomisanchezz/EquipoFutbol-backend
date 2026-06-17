@@ -1,7 +1,6 @@
 //carga variables de entorno por si el seed se ejecuta directo con node
 require("dotenv").config();
-//reutiliza el cliente de Prisma configurado con el driver adapter
-const prisma = require("../src/prisma/prismaClient");
+const prisma = require("./prismaClient");
 
 //datos iniciales: equipos del fútbol argentino, coherentes con la temática de la app
 const teams = [
