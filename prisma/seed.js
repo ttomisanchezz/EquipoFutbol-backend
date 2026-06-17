@@ -1,5 +1,10 @@
-//carga variables de entorno por si el seed se ejecuta directo con node
+// CARGA DE VARIABLES DE ENTORNO
+// Esto permite que el seed lea DATABASE_URL desde el archivo .env
+// cuando se ejecuta directamente con node o mediante npm run db:seed.
 require("dotenv").config();
+
+// Importamos la instancia única de PrismaClient.
+// Este cliente se conecta a PostgreSQL usando la DATABASE_URL.
 const prisma = require("./prismaClient");
 
 //datos iniciales: equipos del fútbol argentino, coherentes con la temática de la app
@@ -398,10 +403,21 @@ const teams = [
 
 const main = async () => {
   console.log("Iniciando seed...");
-  //limpia la tabla para que el seed se pueda ejecutar varias veces sin duplicar datos
-  await prisma.team.deleteMany();
-  //inserta todos los equipos en la base
-  const result = await prisma.team.createMany({ data: teams });
+
+  // Limpiamos la tabla Team antes de insertar los datos iniciales.
+  // Usamos TRUNCATE en vez de deleteMany() porque deleteMany() borra los registros,
+  // pero NO reinicia el contador autoincremental del id.
+  //
+  // RESTART IDENTITY hace que el próximo id vuelva a empezar desde 1.
+  // CASCADE sirve por si en el futuro hubiera relaciones con otras tablas.
+  await prisma.$executeRawUnsafe('TRUNCATE TABLE "Team" RESTART IDENTITY CASCADE;');
+
+  // Insertamos todos los equipos definidos en el array teams.
+  // No mandamos el campo id porque Prisma/PostgreSQL lo genera automáticamente.
+  const result = await prisma.team.createMany({
+    data: teams,
+  });
+
   console.log(`Seed completado: ${result.count} equipos cargados.`);
 };
 

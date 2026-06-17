@@ -8,19 +8,29 @@ datasource db {
 }
 
 model Team {
-  id               String   @id @default(uuid())
+  // id numérico autoincremental.
+  // Esto permite que los endpoints usen /api/equipos/1, /api/equipos/2, etc.
+  id               Int      @id @default(autoincrement())
+
+  // Datos principales del equipo
   name             String
+  category         String
+  shortDescription String
+  description      String
+
+  // Datos deportivos / institucionales
   country          String
   league           String
   stadium          String
   founded          Int
   coach            String
-  shortDescription String
-  description      String
+  titles           Int
+
+  // Imágenes opcionales
   logo             String?
   image            String?
-  category         String
-  titles           Int
+
+  // Fechas automáticas
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
