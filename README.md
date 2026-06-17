@@ -26,7 +26,7 @@ Rol de coordinación / PM: Axel Ostrovsky
 ### Deploys
 
 * Backend deployado: https://equipo-futbol-backend.vercel.app
-* Frontend deployado: https://pw-atp2-ho4c.vercel.app
+* Frontend deployado: https://pw-atp2.vercel.app
 
 ### Tablero de trabajo
 
@@ -712,7 +712,7 @@ VITE_API_URL=https://equipo-futbol-backend.vercel.app
 El backend utiliza la variable:
 
 ```env
-FRONTEND_URL=https://pw-atp2-ho4c.vercel.app
+FRONTEND_URL=https://pw-atp2.vercel.app
 ```
 
 Esto permite que el frontend deployado pueda consumir la API respetando la configuración de CORS.
@@ -740,7 +740,7 @@ PostgreSQL / Neon
 Cuando el usuario entra al home del frontend:
 
 ```txt
-https://pw-atp2-ho4c.vercel.app
+https://pw-atp2.vercel.app
 ```
 
 React ejecuta una solicitud al backend:
@@ -768,7 +768,7 @@ Variables configuradas en Vercel para el backend:
 ```env
 DATABASE_URL=postgresql://...
 PORT=3000
-FRONTEND_URL=https://pw-atp2-ho4c.vercel.app
+FRONTEND_URL=https://pw-atp2.vercel.app
 ```
 
 ### Frontend
@@ -776,7 +776,7 @@ FRONTEND_URL=https://pw-atp2-ho4c.vercel.app
 El frontend está deployado en Vercel:
 
 ```txt
-https://pw-atp2-ho4c.vercel.app
+https://pw-atp2.vercel.app
 ```
 
 Variable configurada en Vercel para el frontend:
