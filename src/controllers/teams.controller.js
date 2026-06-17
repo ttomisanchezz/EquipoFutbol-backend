@@ -46,7 +46,8 @@ const createTeam = async (req, res) => {
       details: validation.errors,
     });
   }
-  return res.status(201).json(req.body);
+  const creado = await teamsService.createTeam(req.body);
+  return res.status(201).json(creado);
 }
 const updateTeam = async (req, res) => {
   const id = req.params.id;
@@ -67,12 +68,13 @@ const updateTeam = async (req, res) => {
 };
 const deleteTeam = async (req,res) =>{
   const id = req.params.id;
-  const deleteTeam = teamsService.deleteTeam(id);
-  if (!deleteTeam) {
+  const existe = await teamsService.getTeamById(id);
+  if (!existe) {
     return res.status(404).json({
-      error: "recurso no encontrado"
+      error: "Recurso no encontrado"
     });
   }
+  await teamsService.deleteTeam(id);
   return res.status(200).json({ message: "Equipo eliminado correctamente" });
 }
 
