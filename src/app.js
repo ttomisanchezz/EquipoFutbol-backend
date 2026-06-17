@@ -3,6 +3,7 @@
 //Crear app express y configurar middlewares
 const express = require("express");
 const cors = require("cors");
+const teamsRoutes = require("./routes/teams.routes");
 //activar CORS para permitir solicitudes desde el frontend
 const app = express();
 //permite recibir JSON en el body de las solicitudes
@@ -15,5 +16,7 @@ app.get("/api/health", (req, res) => {
     message: "API funcionando correctamente",
   });
 });
+//monta las rutas de equipos bajo /api/equipos
+app.use("/api/equipos", teamsRoutes);
 //exporta la app para usarla de index.js
 module.exports = app;
