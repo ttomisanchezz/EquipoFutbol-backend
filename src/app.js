@@ -9,6 +9,8 @@ const cors = require("cors");
 // Importamos las rutas de equipos.
 const teamsRoutes = require("./routes/teams.routes");
 
+
+const authRoutes = require("./routes/auth.routes");
 // Creamos la aplicación de Express.
 const app = express();
 
@@ -50,6 +52,8 @@ app.get("/api/health", (req, res) => {
 // PUT /api/equipos/:id
 // DELETE /api/equipos/:id
 app.use("/api/equipos", teamsRoutes);
+
+app.use("/api/auth", authRoutes);
 
 // Exporta la app para usarla desde index.js.
 module.exports = app;
