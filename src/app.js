@@ -9,6 +9,9 @@ const cors = require("cors");
 // Importamos las rutas de equipos.
 const teamsRoutes = require("./routes/teams.routes");
 
+// Importamos las rutas de favoritos.
+const favoritesRoutes = require("./routes/favorites.routes");
+
 
 const authRoutes = require("./routes/auth.routes");
 // Creamos la aplicación de Express.
@@ -54,6 +57,10 @@ app.get("/api/health", (req, res) => {
 app.use("/api/equipos", teamsRoutes);
 
 app.use("/api/auth", authRoutes);
+
+// Monta las rutas de favoritos bajo /api/favorites.
+// Todas estas rutas estan protegidas con JWT desde favorites.routes.
+app.use("/api/favorites", favoritesRoutes);
 
 // Exporta la app para usarla desde index.js.
 module.exports = app;
