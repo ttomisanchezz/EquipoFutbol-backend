@@ -6,6 +6,7 @@ require("dotenv").config();
 // Importamos la instancia única de PrismaClient.
 // Este cliente se conecta a PostgreSQL usando la DATABASE_URL.
 const prisma = require("./prismaClient");
+const bcrypt = require("bcrypt");
 
 //datos iniciales: equipos del fútbol argentino, coherentes con la temática de la app
 const teams = [
@@ -411,7 +412,22 @@ const main = async () => {
   // RESTART IDENTITY hace que el próximo id vuelva a empezar desde 1.
   // CASCADE sirve por si en el futuro hubiera relaciones con otras tablas.
   await prisma.$executeRawUnsafe('TRUNCATE TABLE "Team" RESTART IDENTITY CASCADE;');
+  // Limpiamos la tabla User para evitar duplicados
+  await prisma.$executeRawUnsafe(
+    'TRUNCATE TABLE "User" RESTART IDENTITY CASCADE;'
+  );
 
+  // Generamos el hash de la contraseña
+  const hashedPassword = await bcrypt.hash("123456", 10);
+
+  // Creamos un usuario de prueba
+  await prisma.user.create({
+    data: {
+      name: "Administrador",
+      email: "admin@test.com",
+      password: hashedPassword,
+    },
+  });
   // Insertamos todos los equipos definidos en el array teams.
   // No mandamos el campo id porque Prisma/PostgreSQL lo genera automáticamente.
   const result = await prisma.team.createMany({
