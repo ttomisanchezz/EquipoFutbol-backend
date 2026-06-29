@@ -1,4 +1,5 @@
 const authService = require("../services/auth.service");
+const authValidation = require("../validations/auth.validation");
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -17,6 +18,14 @@ const getUsers = async (req, res) =>{
 }
 const registerUser = async (req, res) =>{
     try {
+        const validation = authValidation.validateRegister(req.body);
+        if (!validation.isValid) {
+            return res.status(400).json({
+                error: "Datos de usuario inválidos",
+                details: validation.errors,
+            });
+        }
+
         const { name, email, password } = req.body;
         const emailValidate = await authService.getUserEmail(email.trim());
         if (emailValidate) {
@@ -46,13 +55,15 @@ const registerUser = async (req, res) =>{
 }
 const loginUser = async (req, res) => {
     try {
-        const { email, password } = req.body;
-
-        if (!email || !password) {
+        const validation = authValidation.validateLogin(req.body);
+        if (!validation.isValid) {
             return res.status(400).json({
                 error: "Email y contraseña son obligatorios",
+                details: validation.errors,
             });
         }
+
+        const { email, password } = req.body;
         const user = await authService.getUserEmail(email.trim());
         if (!user) {
             return res.status(401).json({
@@ -101,18 +112,8 @@ const logout = async (req, res) =>{
 
 const me = async (req, res) => {
     try {
-        const user = await prisma.user.findUnique({
-            where: {
-                id: req.user.id,
-            },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                createdAt: true,
-                updatedAt: true,
-            },
-        });
+        // req.user lo carga el middleware de autenticación (tarea 5).
+        const user = await authService.getUserProfile(req.user.id);
 
         return res.status(200).json(user);
     } catch (error) {
