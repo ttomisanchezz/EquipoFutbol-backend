@@ -63,6 +63,8 @@ La API implementa:
 * Migraciones de Prisma.
 * Seed inicial con equipos argentinos.
 * CRUD completo.
+* Autenticación de usuarios con JWT: registro, login y logout, con contraseñas hasheadas con bcrypt.
+* Endpoints de favoritos por usuario, protegidos con un middleware de autenticación JWT.
 * Validación manual del body en `POST` y `PUT`.
 * Manejo de errores.
 * Códigos HTTP adecuados.
@@ -83,6 +85,8 @@ La API implementa:
 * CORS
 * dotenv
 * Nodemon
+* bcrypt (hash de contraseñas)
+* jsonwebtoken (autenticación con JWT)
 
 ---
 
@@ -134,6 +138,47 @@ model Team {
 
 ---
 
+## Entidades de usuarios y favoritos
+
+A partir de la incorporación de autenticación, el modelo de datos suma dos entidades: **User** (usuarios registrados) y **Favorite** (relación entre un usuario y un equipo que marcó como favorito).
+
+### Modelo User
+
+```prisma
+model User {
+    id        Int      @id @default(autoincrement())
+    name      String
+    email     String   @unique
+    password  String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    favorites Favorite[]
+}
+```
+
+La contraseña se guarda **hasheada con bcrypt**, nunca en texto plano. El email es único.
+
+### Modelo Favorite
+
+```prisma
+model Favorite {
+    id        Int      @id @default(autoincrement())
+    userId    Int
+    teamId    Int
+    createdAt DateTime @default(now())
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, teamId])
+}
+```
+
+La restricción `@@unique([userId, teamId])` evita que un usuario guarde dos veces el mismo equipo. Si se borra un usuario o un equipo, sus favoritos se eliminan en cascada.
+
+---
+
 ## Estructura del proyecto
 
 ```txt
@@ -146,19 +191,26 @@ EquipoFutbol-backend/
 │   └── seed.js
 │
 ├── src/
-│   ├── config/
-│   │   └── cors.config.js
-│   │
 │   ├── controllers/
+│   │   ├── auth.controller.js
+│   │   ├── favorites.controller.js
 │   │   └── teams.controller.js
 │   │
+│   ├── middlewares/
+│   │   └── auth.middleware.js
+│   │
 │   ├── routes/
+│   │   ├── auth.routes.js
+│   │   ├── favorites.routes.js
 │   │   └── teams.routes.js
 │   │
 │   ├── services/
+│   │   ├── auth.service.js
+│   │   ├── favorites.service.js
 │   │   └── teams.service.js
 │   │
 │   ├── validations/
+│   │   ├── auth.validation.js
 │   │   └── team.validation.js
 │   │
 │   ├── app.js
@@ -211,6 +263,12 @@ PORT=3000
 
 # URL del frontend autorizado por CORS
 FRONTEND_URL=http://localhost:5173
+
+# Clave secreta para firmar los JWT (usar al menos 32 caracteres aleatorios)
+JWT_SECRET=tu_clave_secreta_de_al_menos_32_caracteres
+
+# Tiempo de vida del token. Acepta formato de ms/vercel: 1d, 12h, 30m, etc.
+JWT_EXPIRES_IN=1d
 ```
 
 ### Ejemplo de `.env` local
@@ -219,7 +277,11 @@ FRONTEND_URL=http://localhost:5173
 DATABASE_URL="postgresql://usuario:password@host/neondb?sslmode=require"
 PORT=3000
 FRONTEND_URL=http://localhost:5173
+JWT_SECRET=una_clave_secreta_larga_y_aleatoria_de_32_caracteres
+JWT_EXPIRES_IN=1d
 ```
+
+> Las variables `JWT_SECRET` y `JWT_EXPIRES_IN` son **nuevas** y obligatorias para la autenticación. `JWT_SECRET` firma y verifica los tokens; `JWT_EXPIRES_IN` define su expiración.
 
 Importante: el archivo `.env` real no debe subirse al repositorio porque contiene credenciales privadas.
 
@@ -649,6 +711,252 @@ Respuesta esperada:
 
 ---
 
+## Endpoints de autenticación
+
+La autenticación usa **JWT**. El login devuelve un token que el cliente debe enviar en el header `Authorization: Bearer <token>` para acceder a las rutas protegidas (`GET /api/auth/me` y todos los favoritos).
+
+---
+
+### Registrar usuario
+
+```http
+POST /api/auth/register
+```
+
+Body esperado (la contraseña debe tener al menos 6 caracteres):
+
+```json
+{
+    "name": "Juan Perez",
+    "email": "juan@mail.com",
+    "password": "secreta123"
+}
+```
+
+Respuesta `201` (devuelve el usuario creado, sin la contraseña):
+
+```json
+{
+    "id": 1,
+    "name": "Juan Perez",
+    "email": "juan@mail.com",
+    "createdAt": "2026-06-29T00:00:00.000Z",
+    "updatedAt": "2026-06-29T00:00:00.000Z"
+}
+```
+
+Si el body es inválido (`400`):
+
+```json
+{
+    "error": "Datos de usuario inválidos",
+    "details": [
+        { "field": "password", "message": "La contraseña es obligatoria y debe tener al menos 6 caracteres." }
+    ]
+}
+```
+
+Si el email o el nombre ya están en uso (`409`):
+
+```json
+{ "error": "Email ya ingresado" }
+```
+
+---
+
+### Iniciar sesión
+
+```http
+POST /api/auth/login
+```
+
+Body esperado:
+
+```json
+{
+    "email": "juan@mail.com",
+    "password": "secreta123"
+}
+```
+
+Respuesta `200` (token JWT + datos básicos del usuario):
+
+```json
+{
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+        "id": 1,
+        "name": "Juan Perez",
+        "email": "juan@mail.com"
+    }
+}
+```
+
+Si faltan campos (`400`) o las credenciales son incorrectas (`401`):
+
+```json
+{ "error": "Email o contraseña incorrectos" }
+```
+
+---
+
+### Cerrar sesión
+
+```http
+POST /api/auth/logout
+```
+
+Como el JWT es stateless, el cierre real se hace en el cliente borrando el token. Este endpoint confirma la acción.
+
+Respuesta `200`:
+
+```json
+{ "message": "Sesión cerrada correctamente" }
+```
+
+---
+
+### Perfil del usuario autenticado (ruta protegida)
+
+```http
+GET /api/auth/me
+```
+
+Requiere el header `Authorization: Bearer <token>`.
+
+```bash
+curl https://equipo-futbol-backend.vercel.app/api/auth/me \
+-H "Authorization: Bearer <token>"
+```
+
+Respuesta `200`:
+
+```json
+{
+    "id": 1,
+    "name": "Juan Perez",
+    "email": "juan@mail.com",
+    "createdAt": "2026-06-29T00:00:00.000Z",
+    "updatedAt": "2026-06-29T00:00:00.000Z"
+}
+```
+
+Si no se envía token o es inválido/expiró (`401`):
+
+```json
+{ "error": "No autorizado: falta el token de autenticación" }
+```
+
+---
+
+## Endpoints de favoritos
+
+Todas las rutas de favoritos son **privadas**: requieren el header `Authorization: Bearer <token>`. El usuario se toma del token, no se envía en el body.
+
+---
+
+### Listar favoritos del usuario
+
+```http
+GET /api/favorites
+```
+
+Respuesta `200` (cada favorito incluye el equipo completo):
+
+```json
+[
+    {
+        "id": 5,
+        "userId": 1,
+        "teamId": 3,
+        "createdAt": "2026-06-29T00:00:00.000Z",
+        "team": {
+            "id": 3,
+            "name": "Boca Juniors",
+            "category": "Primera División",
+            "country": "Argentina",
+            "league": "Liga Profesional Argentina",
+            "stadium": "La Bombonera",
+            "founded": 1905,
+            "coach": "Entrenador",
+            "titles": 35,
+            "logo": "/logos/boca.png"
+        }
+    }
+]
+```
+
+Si no hay token o es inválido (`401`):
+
+```json
+{ "error": "No autorizado: falta el token de autenticación" }
+```
+
+---
+
+### Agregar un favorito
+
+```http
+POST /api/favorites
+```
+
+Body esperado:
+
+```json
+{ "teamId": 3 }
+```
+
+```bash
+curl -X POST https://equipo-futbol-backend.vercel.app/api/favorites \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer <token>" \
+-d '{ "teamId": 3 }'
+```
+
+Respuesta `201` (el favorito creado con su equipo):
+
+```json
+{
+    "id": 5,
+    "userId": 1,
+    "teamId": 3,
+    "createdAt": "2026-06-29T00:00:00.000Z",
+    "team": { "id": 3, "name": "Boca Juniors", "category": "Primera División" }
+}
+```
+
+Otros códigos posibles:
+
+* `400` → `{ "error": "teamId invalido" }`
+* `404` → `{ "error": "Equipo no encontrado" }`
+* `409` → `{ "error": "Equipo ya agregado a favoritos" }`
+
+---
+
+### Quitar un favorito
+
+```http
+DELETE /api/favorites/:teamId
+```
+
+```bash
+curl -X DELETE https://equipo-futbol-backend.vercel.app/api/favorites/3 \
+-H "Authorization: Bearer <token>"
+```
+
+Respuesta `200`:
+
+```json
+{ "message": "Favorito eliminado correctamente" }
+```
+
+Otros códigos posibles:
+
+* `400` → `{ "error": "teamId invalido" }`
+* `404` → `{ "error": "Favorito no encontrado" }`
+
+---
+
 ## Validaciones implementadas
 
 La API valida manualmente el body en los endpoints `POST` y `PUT`, sin utilizar librerías externas como Zod o Joi.
@@ -693,8 +1001,9 @@ Ejemplo de respuesta con error de validación:
 | Crear recurso correctamente    | 201    |
 | Body inválido                  | 400    |
 | ID inválido                    | 400    |
+| No autorizado (token faltante o inválido) | 401 |
 | Recurso no encontrado          | 404    |
-| Equipo duplicado               | 409    |
+| Recurso duplicado (equipo / email / favorito) | 409 |
 | Error inesperado del servidor  | 500    |
 
 ---
@@ -793,7 +1102,7 @@ La base de datos utilizada es **PostgreSQL** mediante **Neon**.
 
 El proyecto no utiliza arrays en memoria ni archivos JSON como base de datos. Toda la persistencia principal de los equipos se realiza en PostgreSQL usando Prisma ORM.
 
-El frontend conserva localStorage únicamente para la funcionalidad de favoritos del usuario. Los datos principales de los equipos se obtienen desde la API y se persisten en PostgreSQL.
+Los **usuarios** y los **favoritos** también se persisten en PostgreSQL (modelos `User` y `Favorite`). Los favoritos dejaron de guardarse en `localStorage` del navegador: ahora son por usuario y se obtienen siempre desde la API. Las contraseñas se almacenan hasheadas con bcrypt.
 
 ---
 
