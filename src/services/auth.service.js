@@ -29,12 +29,28 @@ const getUserEmail = async (email) => {
     });
 }
 const getUserName = async (name) => {
-    return await prisma.team.findFirst({
+    return await prisma.user.findFirst({
         where: {
             name: {
                 equals: name,
                 mode: "insensitive",
             },
+        },
+    });
+}
+// Devuelve los datos públicos del usuario (sin password) por id.
+// Lo usa el endpoint /me una vez que el middleware (tarea 5) carga req.user.
+const getUserProfile = async (id) => {
+    return await prisma.user.findUnique({
+        where: {
+            id,
+        },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            createdAt: true,
+            updatedAt: true,
         },
     });
 }
@@ -50,4 +66,4 @@ const registerUser = async (data) => {
         },
     });
 };
-module.exports = { getusers, getuserId, getUserEmail, getUserName, registerUser };
+module.exports = { getusers, getuserId, getUserEmail, getUserName, getUserProfile, registerUser };
