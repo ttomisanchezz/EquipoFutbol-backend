@@ -1,6 +1,6 @@
-//import authMiddleware from "../middlewares/auth.middleware.js";
 const { Router } = require("express");
 const authController = require("../controllers/auth.controller");
+const authMiddleware = require("../middlewares/auth.middleware");
 const router = Router();
 
 //GET /api/auth -> listado de los usuarios
@@ -11,8 +11,8 @@ router.post("/register", authController.registerUser);
 router.post("/login", authController.loginUser);
 //POST /api/auth/logout -> sesion cerrada
 router.post("/logout", authController.logout);
-//POST /api/auth/me -> devuelve informacion sin contraseña
-// falta  authMiddleware (tarea 5)
-router.get("/me", /*authMiddleware,*/ authController.me);
+//GET /api/auth/me -> devuelve la informacion del usuario logueado (sin contraseña)
+//ruta protegida: authMiddleware valida el token antes de llegar al controller
+router.get("/me", authMiddleware, authController.me);
 
 module.exports = router;
