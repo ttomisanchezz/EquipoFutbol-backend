@@ -26,7 +26,7 @@ const parseTeamId = (idParam) => {
 
 // GET /api/equipos?page=1&limit=8&search=boca
 // Lista equipos con paginado y búsqueda opcional por nombre.
-const getTeams = async (req, res) => {
+const getTeams = async (req, res, next) => {
   try {
     // req.query son los parámetros que vienen después del "?" en la URL.
     // Ejemplo: /api/equipos?page=2&limit=8&search=boca
@@ -52,18 +52,14 @@ const getTeams = async (req, res) => {
     // 200 = OK. La consulta salió bien.
     return res.status(200).json(teams);
   } catch (error) {
-    console.error("Error obteniendo equipos:", error);
-
-    // 500 = error inesperado del servidor.
-    return res.status(500).json({
-      error: "Error inesperado del servidor",
-    });
+    // Delegamos el error al middleware centralizado (errorHandler).
+    next(error);
   }
 };
 
 // GET /api/equipos/:id
 // Devuelve un equipo puntual por id.
-const getTeamById = async (req, res) => {
+const getTeamById = async (req, res, next) => {
   try {
     // Convertimos el id de string a number.
     const id = parseTeamId(req.params.id);
@@ -89,17 +85,13 @@ const getTeamById = async (req, res) => {
     // Si existe, lo devolvemos.
     return res.status(200).json(team);
   } catch (error) {
-    console.error("Error obteniendo equipo por ID:", error);
-
-    return res.status(500).json({
-      error: "Error inesperado del servidor",
-    });
+    next(error);
   }
 };
 
 // POST /api/equipos
 // Crea un equipo nuevo.
-const createTeam = async (req, res) => {
+const createTeam = async (req, res, next) => {
   try {
     // Primero validamos el body antes de consultar o modificar la base.
     const validation = validateTeam(req.body);
@@ -148,17 +140,13 @@ const createTeam = async (req, res) => {
     // 201 = Created. Es el código correcto para POST exitoso.
     return res.status(201).json(newTeam);
   } catch (error) {
-    console.error("Error creando equipo:", error);
-
-    return res.status(500).json({
-      error: "Error inesperado del servidor",
-    });
+    next(error);
   }
 };
 
 // PUT /api/equipos/:id
 // Actualiza un equipo existente.
-const updateTeam = async (req, res) => {
+const updateTeam = async (req, res, next) => {
   try {
     // Convertimos y validamos el id de la URL.
     const id = parseTeamId(req.params.id);
@@ -207,17 +195,13 @@ const updateTeam = async (req, res) => {
     // 200 = OK. PUT exitoso.
     return res.status(200).json(updatedTeam);
   } catch (error) {
-    console.error("Error actualizando equipo:", error);
-
-    return res.status(500).json({
-      error: "Error inesperado del servidor",
-    });
+    next(error);
   }
 };
 
 // DELETE /api/equipos/:id
 // Elimina un equipo existente.
-const deleteTeam = async (req, res) => {
+const deleteTeam = async (req, res, next) => {
   try {
     // Convertimos y validamos el id.
     const id = parseTeamId(req.params.id);
@@ -243,11 +227,7 @@ const deleteTeam = async (req, res) => {
       message: "Equipo eliminado correctamente",
     });
   } catch (error) {
-    console.error("Error eliminando equipo:", error);
-
-    return res.status(500).json({
-      error: "Error inesperado del servidor",
-    });
+    next(error);
   }
 };
 

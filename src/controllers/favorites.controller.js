@@ -35,7 +35,7 @@ const parseTeamId = (teamIdParam) => {
 
 // GET /api/favorites
 // Lista los favoritos del usuario logueado, incluyendo los datos del equipo.
-const getFavorites = async (req, res) => {
+const getFavorites = async (req, res, next) => {
   try {
     // req.user lo carga el middleware de autenticacion.
     const userId = req.user.id;
@@ -44,17 +44,13 @@ const getFavorites = async (req, res) => {
 
     return res.status(200).json(favorites);
   } catch (error) {
-    console.error("Error obteniendo favoritos:", error);
-
-    return res.status(500).json({
-      error: "Error inesperado del servidor",
-    });
+    next(error);
   }
 };
 
 // POST /api/favorites
 // Agrega un equipo a los favoritos del usuario logueado.
-const createFavorite = async (req, res) => {
+const createFavorite = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const teamId = parseTeamId(req.body.teamId);
@@ -90,23 +86,15 @@ const createFavorite = async (req, res) => {
 
     return res.status(201).json(favorite);
   } catch (error) {
-    if (error.code === "P2002") {
-      return res.status(409).json({
-        error: "Equipo ya agregado a favoritos",
-      });
-    }
-
-    console.error("Error creando favorito:", error);
-
-    return res.status(500).json({
-      error: "Error inesperado del servidor",
-    });
+    // El caso duplicado ya se maneja arriba; si igual llega un P2002
+    // (carrera), el errorHandler central lo mapea a 409.
+    next(error);
   }
 };
 
 // DELETE /api/favorites/:teamId
 // Elimina el favorito del usuario logueado para un equipo puntual.
-const deleteFavorite = async (req, res) => {
+const deleteFavorite = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const teamId = parseTeamId(req.params.teamId);
@@ -134,17 +122,7 @@ const deleteFavorite = async (req, res) => {
       message: "Favorito eliminado correctamente",
     });
   } catch (error) {
-    if (error.code === "P2025") {
-      return res.status(404).json({
-        error: "Favorito no encontrado",
-      });
-    }
-
-    console.error("Error eliminando favorito:", error);
-
-    return res.status(500).json({
-      error: "Error inesperado del servidor",
-    });
+    next(error);
   }
 };
 

@@ -14,6 +14,11 @@ const favoritesRoutes = require("./routes/favorites.routes");
 
 
 const authRoutes = require("./routes/auth.routes");
+
+// Middlewares de manejo de rutas inexistentes (404) y de errores centralizado.
+const notFound = require("./middlewares/notFound");
+const errorHandler = require("./middlewares/errorHandler");
+
 // Creamos la aplicación de Express.
 const app = express();
 
@@ -61,6 +66,13 @@ app.use("/api/auth", authRoutes);
 // Monta las rutas de favoritos bajo /api/favorites.
 // Todas estas rutas estan protegidas con JWT desde favorites.routes.
 app.use("/api/favorites", favoritesRoutes);
+
+// Si ninguna ruta anterior coincidió, respondemos 404.
+app.use(notFound);
+
+// Manejo centralizado de errores. Siempre va al final, después de las rutas.
+// Los controllers delegan acá con next(error) en lugar de responder 500 cada uno.
+app.use(errorHandler);
 
 // Exporta la app para usarla desde index.js.
 module.exports = app;

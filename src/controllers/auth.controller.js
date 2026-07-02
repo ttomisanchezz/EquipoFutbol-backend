@@ -4,19 +4,15 @@ const authValidation = require("../validations/auth.validation");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-const getUsers = async (req, res) =>{
+const getUsers = async (req, res, next) =>{
     try{
         const users = await authService.getusers();
         return res.status(200).json(users);
-    }catch (error) {
-        console.error("Error obteniendo usuarios:", error);
-
-        return res.status(500).json({
-            error: "Error inesperado del servidor",
-        });
+    } catch (error) {
+        next(error);
     }
 }
-const registerUser = async (req, res) =>{
+const registerUser = async (req, res, next) =>{
     try {
         const validation = authValidation.validateRegister(req.body);
         if (!validation.isValid) {
@@ -45,15 +41,11 @@ const registerUser = async (req, res) =>{
         const newUser = await authService.registerUser({name, email, password: hashedPassword,});
         
         return res.status(201).json(newUser);
-    } catch(error){
-        console.error("Error creando usuario:", error);
-
-        return res.status(500).json({
-            error: "Error inesperado del servidor",
-        });
+    } catch (error) {
+        next(error);
     }
 }
-const loginUser = async (req, res) => {
+const loginUser = async (req, res, next) => {
     try {
         const validation = authValidation.validateLogin(req.body);
         if (!validation.isValid) {
@@ -96,32 +88,24 @@ const loginUser = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Error validando al usuario:", error);
-
-        return res.status(500).json({
-            error: "Error inesperado del servidor",
-        });
+        next(error);
     }
 };
 
-const logout = async (req, res) =>{
+const logout = async (req, res, next) =>{
     res.status(200).json({
         message: "Sesión cerrada correctamente",
     });
 }
 
-const me = async (req, res) => {
+const me = async (req, res, next) => {
     try {
         // req.user lo carga el middleware de autenticación (tarea 5).
         const user = await authService.getUserProfile(req.user.id);
 
         return res.status(200).json(user);
     } catch (error) {
-        console.error("Error obteniendo usuario:", error);
-
-        return res.status(500).json({
-            error: "Error inesperado del servidor",
-        });
+        next(error);
     }
 };
 module.exports = {getUsers, registerUser,loginUser, logout, me};
